@@ -7,6 +7,7 @@ import numpy
 import skimage
 import skimage.io
 import skimage.transform
+import skimage.feature
 
 class Util:
 	@classmethod
@@ -217,12 +218,46 @@ class Image:
 
 		return Image.ImageFromArray(corners_image)
 
+	def native_canny(self, sigma):
+		i = self._intensify(self.image)
+		i = self._down_rank(i)
+		e = skimage.filter.canny(i, sigma=sigma)
+		e = self._up_rank(e)
+		return Image.ImageFromArray(e)
+
+	def native_corners(self, sigma, threshold):
+		i = self._intensify(self.image)
+		i = self._down_rank(i)
+		e = skimage.feature.corner_harris(i, k=threshold, sigma=sigma)
+		e = self._up_rank(e)
+		return Image.ImageFromArray(e)
+
 	def native_gaussian(self, sigma):
-		self.image = skimage.filter.gaussian_filter(
+		return Image.ImageFromArray(skimage.filter.gaussian_filter(
 			self.image,
 			sigma,
 			mode='wrap',
-			multichannel=True)
+			multichannel=True))
+
+	def _up_rank(self, array):
+		height, width = array.shape
+
+		aa = numpy.zeros(height*width*1)
+		aa = aa.reshape(height, width, 1)
+		for x in range(width):
+			for y in range(height):
+				aa[y,x,0] = array[y,x]
+		return aa
+
+	def _down_rank(self, array):
+		height, width, depth = array.shape
+
+		aa = numpy.zeros(height*width)
+		aa = aa.reshape(height, width)
+		for x in range(width):
+			for y in range(height):
+				aa[y,x] = array[y,x]
+		return aa
 
 	def intensify(self):
 		return Image.ImageFromArray(self._intensify(self.image))
@@ -312,6 +347,32 @@ class Image:
 			img.gradient_image, img.gradient_direction = \
 				self._compute_gradient(self.image,sigma)
 		return img
+
+	def compute_gaussian(self, sigma):
+		return Image.ImageFromArray(self._compute_gaussian(self.image, sigma))
+
+	def _compute_gaussian(self, image, sigma):
+		height, width, depth = image.shape
+
+		support = int(sigma*2 + 0.5)
+		kernel = numpy.zeros(support*2*support*2)
+		kernel = kernel.reshape(support*2, support*2)
+		for i in range(-1*support, support):
+			for j in range(-1*support, support):
+				kernel[j+support, i+support] = Gauss.Gaussian2d(i, j, sigma)
+
+		gimage = numpy.zeros(height*width*depth)
+		gimage = gimage.reshape(height, width, depth)
+		for x in range(width):
+			for y in range(height):
+				for d in range(depth):
+					convolve = 0.0
+					for i in range(-1*support, support):
+						for j in range(-1*support, support):
+							convolve += (kernel[j+support, i+support] * 
+								Util.values_at(image, i+y, j+x, d))
+					gimage[y,x,d] = convolve
+		return gimage
 
 	def _compute_gradient(self, image, sigma):
 		separate_gradient, gradient_direction = \
@@ -415,18 +476,25 @@ if __name__ == "__main__":
 	print("Loading image.")
 #	image = Image("./line.jpg")
 #	image = Image.ImageFromFile("./circle.jpg")
-	image = Image.ImageFromFile("./building.jpg")
+#	image = Image.ImageFromFile("./building.jpg")
 #	image = Image.ImageFromFile("./building-crop.jpg")
-#	image = Image.ImageFromFile("./checker.jpg")
+	image = Image.ImageFromFile("./checker.jpg")
 #	image = Image.ImageFromFile("./checkers-crop.jpg")
 #	image = Image.ImageFromFile("./corner.jpg")
 #	image_native = Image("./building-crop.jpg")
 
-	image = image.corners(2.0, 0.1)
-	image.store_image("./me-edges.jpg")
+#	image = image.corners(2.0, 0.1)
+#	image = image.native_corners(1.0, 0.1)
+	me = image.compute_gaussian(3.0)
+	me.store_image("./me-gauss.jpg")
+	them = image.native_gaussian(3.0)
+	them.store_image("./them-gauss.jpg")
 
-#	edges = image.canny(1.0)
-#	edges.store_image("./me-edges.jpg")
+	#edges = image.canny(2.0)
+	#edges = image.native_canny(2.0)
+	#edges.store_image("./them-edges.jpg")
+
+
 
 #	# Manual edge detection -- to check.
 #	image = image.intensify()
