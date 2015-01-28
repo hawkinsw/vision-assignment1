@@ -44,7 +44,7 @@ class Derivative:
 class Debug:
 	@classmethod
 	def Print(cls, string):
-		#print(string)
+		print(string)
 		pass
 
 class Gauss:
@@ -122,9 +122,68 @@ class Image:
 
 	def canny(self, sigma):
 		tmp = self._intensify(self.image)
-		g, gd = self._compute_gradient(tmp, sigma)
+		g, gd = self._compute_gradient(tmp, sigma, save="./me-grad")
 		tmp = self._thin_gradient(g, gd)
-		return Image.ImageFromArray(tmp)
+		up = self._relative_up(tmp)
+		return Image.ImageFromArray(up)
+
+	def _up_rank(self, array):
+		height, width = array.shape
+
+		aa = numpy.zeros(height*width*1)
+		aa = aa.reshape(height, width, 1)
+		for x in range(width):
+			for y in range(height):
+				aa[y,x,0] = array[y,x]
+		return aa
+
+	def _down_rank(self, array):
+		height, width, depth = array.shape
+
+		aa = numpy.zeros(height*width)
+		aa = aa.reshape(height, width)
+		for x in range(width):
+			for y in range(height):
+				aa[y,x] = array[y,x]
+		return aa
+
+
+	def _relative_up(self, image):
+		maxi = 0.0
+		height, width, parts = image.shape
+		up = numpy.zeros(height*width*parts)
+		up = up.reshape(height, width, parts)
+		for x in range(width):
+			for y in range(height):
+				for z in range(parts):
+					if (image[y,x,z]>maxi): maxi = image[y,x,z]
+
+		for x in range(width):
+			for y in range(height):
+				for z in range(parts):
+					up[y,x,z] = image[y,x,z]/maxi
+		return up
+
+	def _save_separate_gradients(self, gradiants, path_base, extension="jpg"):
+		height, width, depth = gradiants.shape
+
+		assert depth == 2, "Depth must be 2 (ie, x and y derivatives)"
+
+		x_deriv_base = numpy.zeros(height*width*1)
+		x_deriv_base = x_deriv_base.reshape(height, width, 1)
+		y_deriv_base = numpy.zeros(height*width*1)
+		y_deriv_base = y_deriv_base.reshape(height, width, 1)
+		for x in range(width):
+			for y in range(height):
+				x_deriv_base[y,x,0] = abs(gradiants[y,x,Derivative.WithRespectToX])
+				y_deriv_base[y,x,0] = abs(gradiants[y,x,Derivative.WithRespectToY])
+		x_deriv_base = self._relative_up(x_deriv_base)
+		x_deriv_image = Image.ImageFromArray(x_deriv_base)
+		x_deriv_image.store_image(path_base + "-x." + extension)
+
+		y_deriv_base = self._relative_up(y_deriv_base)
+		y_deriv_image = Image.ImageFromArray(y_deriv_base)
+		y_deriv_image.store_image(path_base + "-y." + extension)
 
 	def corners(self, sigma, threshold, neighborhood_size = 4):
 		sortable = []
@@ -148,8 +207,8 @@ class Image:
 				#
 				covar = numpy.zeros(4)
 				covar = covar.reshape(2,2)
-				for i in range(-1*neighborhood_size, neighborhood_size):
-					for j in range(-1*neighborhood_size, neighborhood_size):
+				for i in range(-1*neighborhood_size, neighborhood_size+1):
+					for j in range(-1*neighborhood_size, neighborhood_size+1):
 						covar[0,0] += \
 							Util.values_at(gs,y+j,x+i,Derivative.WithRespectToX)*\
 							Util.values_at(gs,y+j,x+i,Derivative.WithRespectToX)
@@ -185,8 +244,8 @@ class Image:
 					# update the neighborhood where this threshold
 					# value is bigger than existing values.
 					sortable.append((e, y, x))
-					for i in range(-1*neighborhood_size, neighborhood_size):
-						for j in range(-1*neighborhood_size, neighborhood_size):
+					for i in range(-1*neighborhood_size, neighborhood_size+1):
+						for j in range(-1*neighborhood_size, neighborhood_size+1):
 							# Using a slice index/assignment from numpy would be
 							# awesome, but I don't know if we can.
 							if (x+i) > 0 and (x+i) < gradient_width and \
@@ -201,8 +260,8 @@ class Image:
 		max_e = sortable[0][0]
 		for e,y,x in sortable:
 			Debug.Print("In neighborhood of (%d,%d):" % (y, x))
-			for i in range(-1*neighborhood_size, neighborhood_size):
-				for j in range(-1*neighborhood_size, neighborhood_size):
+			for i in range(-1*neighborhood_size, neighborhood_size+1):
+				for j in range(-1*neighborhood_size, neighborhood_size+1):
 					if (x+i) > 0 and (x+i) < gradient_width and \
 					   (y+j) > 0 and (y+j) < gradient_height and\
 						 corners_covariance[y+j,x+i] < e:
@@ -238,27 +297,6 @@ class Image:
 			sigma,
 			mode='wrap',
 			multichannel=True))
-
-	def _up_rank(self, array):
-		height, width = array.shape
-
-		aa = numpy.zeros(height*width*1)
-		aa = aa.reshape(height, width, 1)
-		for x in range(width):
-			for y in range(height):
-				aa[y,x,0] = array[y,x]
-		return aa
-
-	def _down_rank(self, array):
-		height, width, depth = array.shape
-
-		aa = numpy.zeros(height*width)
-		aa = aa.reshape(height, width)
-		for x in range(width):
-			for y in range(height):
-				aa[y,x] = array[y,x]
-		return aa
-
 	def intensify(self):
 		return Image.ImageFromArray(self._intensify(self.image))
 
@@ -355,11 +393,13 @@ class Image:
 		height, width, depth = image.shape
 
 		support = int(sigma*2 + 0.5)
-		kernel = numpy.zeros(support*2*support*2)
-		kernel = kernel.reshape(support*2, support*2)
-		for i in range(-1*support, support):
-			for j in range(-1*support, support):
+		kernel = numpy.zeros((support*2+1)*(support*2+1))
+		kernel = kernel.reshape((support*2+1), (support*2+1))
+		kernel_sum = 0.0
+		for i in range(-1*support, support+1):
+			for j in range(-1*support, support+1):
 				kernel[j+support, i+support] = Gauss.Gaussian2d(i, j, sigma)
+				kernel_sum += kernel[j+support, i+support]
 
 		gimage = numpy.zeros(height*width*depth)
 		gimage = gimage.reshape(height, width, depth)
@@ -367,17 +407,21 @@ class Image:
 			for y in range(height):
 				for d in range(depth):
 					convolve = 0.0
-					for i in range(-1*support, support):
-						for j in range(-1*support, support):
+					for i in range(-1*support, support+1):
+						for j in range(-1*support, support+1):
 							convolve += (kernel[j+support, i+support] * 
 								Util.values_at(image, i+y, j+x, d))
+					Debug.Print("(%d, %d, %d): %f to %f" % (y,x,d,image[y,x,d], convolve))
 					gimage[y,x,d] = convolve
 		return gimage
 
-	def _compute_gradient(self, image, sigma):
+	def _compute_gradient(self, image, sigma, save=None):
 		separate_gradient, gradient_direction = \
 			self._compute_separate_gradient(image, sigma)
 		gradient_height, gradient_width, gradient_parts = separate_gradient.shape
+
+		if save != None:
+			self._save_separate_gradients(separate_gradient, save)
 
 		gradient_image = numpy.zeros(gradient_height * gradient_width * 1)
 		gradient_image = gradient_image.reshape(gradient_height, gradient_width, 1)
@@ -404,13 +448,13 @@ class Image:
 		gradient_direction = numpy.zeros(image_height*image_width)
 		gradient_direction = gradient_direction.reshape(image_height, image_width)
 
-		convolution_range = 6
+		convolution_range = int(sigma*2 + 0.5)
 
 		# calculate factor as the gaussian kernel of the
 		# convolution
-		factor = numpy.zeros(convolution_range*2)
-		d_factor = numpy.zeros(convolution_range*2)
-		for c in range(-1*convolution_range, convolution_range):
+		factor = numpy.zeros(convolution_range*2+1)
+		d_factor = numpy.zeros(convolution_range*2+1)
+		for c in range(-1*convolution_range, convolution_range+1):
 			# use the 2d gaussian to calculate the
 			# amount this pixel should contribute overall.
 			factor[c + convolution_range] = Gauss.Gaussian1d(c, sigma)
@@ -425,8 +469,8 @@ class Image:
 				Debug.Print("(y,x,0): (" + str(y) + "," + str(x) + ",0): "
 					+ str(image[y,x,0]))
 
-				for i in range(-1*convolution_range, convolution_range):
-					for j in range(-1*convolution_range, convolution_range):
+				for i in range(-1*convolution_range, convolution_range+1):
+					for j in range(-1*convolution_range, convolution_range+1):
 						# use the 2d gaussian to calculate the
 						# amount this pixel should contribute overall.
 						x_grad += Util.values_at(image, y+j, x+i, 0)* \
@@ -462,43 +506,23 @@ class Image:
 		return (separate_gradient, gradient_direction)
 
 if __name__ == "__main__":
-#	sigma = 2
-#	i_range = 6
-#	j_range = 6
-#	s = 0
-#	for i in range(-1*i_range, i_range):
-#		for j in range(-1*j_range, j_range):
-#			factor = Gauss.Gaussian2d(i,j,sigma)
-#			s += factor
-#			print("(%d,%d): %f" % (i,j,factor))
-#	print("sum: %f" % s)
-
 	print("Loading image.")
 #	image = Image("./line.jpg")
 #	image = Image.ImageFromFile("./circle.jpg")
 #	image = Image.ImageFromFile("./building.jpg")
-#	image = Image.ImageFromFile("./building-crop.jpg")
-	image = Image.ImageFromFile("./checker.jpg")
+	image = Image.ImageFromFile("./building-crop.jpg")
+#	image = Image.ImageFromFile("./checker.jpg")
 #	image = Image.ImageFromFile("./checkers-crop.jpg")
 #	image = Image.ImageFromFile("./corner.jpg")
-#	image_native = Image("./building-crop.jpg")
 
 #	image = image.corners(2.0, 0.1)
 #	image = image.native_corners(1.0, 0.1)
-	me = image.compute_gaussian(3.0)
-	me.store_image("./me-gauss.jpg")
-	them = image.native_gaussian(3.0)
-	them.store_image("./them-gauss.jpg")
+#	me = image.compute_gaussian(2.0)
+#	me.store_image("./me-gauss.jpg")
+#	them = image.native_gaussian(2.0)
+#	them.store_image("./them-gauss.jpg")
 
-	#edges = image.canny(2.0)
+	edges = image.canny(2.0)
+	edges.store_image("./me-edges.jpg")
 	#edges = image.native_canny(2.0)
 	#edges.store_image("./them-edges.jpg")
-
-
-
-#	# Manual edge detection -- to check.
-#	image = image.intensify()
-#	gradient = image.compute_gradient(1.0)
-#	gradient.store_gradient("me-thick.jpg")
-#	thin_gradient = gradient.thin_gradient()
-#	thin_gradient.store_gradient("me-thin.jpg")
