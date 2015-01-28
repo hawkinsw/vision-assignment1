@@ -44,7 +44,7 @@ class Derivative:
 class Debug:
 	@classmethod
 	def Print(cls, string):
-		print(string)
+		#print(string)
 		pass
 
 class Gauss:
@@ -488,6 +488,7 @@ class Image:
 				gradient_image[y,x,0] = numpy.sqrt(x_grad*x_grad + y_grad*y_grad)
 		return (gradient_image, gradient_direction)
 
+	#@profile
 	def _compute_separate_gradient(self, image, sigma):
 
 		(image_height, image_width, image_channels) = image.shape
@@ -510,11 +511,26 @@ class Image:
 		# convolution
 		factor = numpy.zeros(convolution_range*2+1)
 		d_factor = numpy.zeros(convolution_range*2+1)
+
+		dy_factor = numpy.zeros((convolution_range*2+1)*(convolution_range*2+1))
+		dy_factor = dy_factor.reshape((convolution_range*2+1),(convolution_range*2+1))
+		dx_factor = numpy.zeros((convolution_range*2+1)*(convolution_range*2+1))
+		dx_factor = dx_factor.reshape((convolution_range*2+1),(convolution_range*2+1))
+
 		for c in range(-1*convolution_range, convolution_range+1):
 			# use the 2d gaussian to calculate the
 			# amount this pixel should contribute overall.
 			factor[c + convolution_range] = Gauss.Gaussian1d(c, sigma)
 			d_factor[c + convolution_range] = Gauss.Gaussian1d1d(c, sigma)
+
+		for i in range(-1*convolution_range, convolution_range+1):
+			for j in range(-1*convolution_range, convolution_range+1):
+				dx_factor[j+convolution_range,i+convolution_range] = \
+					d_factor[i+convolution_range]* \
+					factor[j+convolution_range]
+				dy_factor[j+convolution_range,i+convolution_range] = \
+					factor[i + convolution_range]* \
+					d_factor[j + convolution_range]
 
 		for x in range(image_width):
 			for y in range(image_height):
@@ -525,17 +541,22 @@ class Image:
 				Debug.Print("(y,x,0): (" + str(y) + "," + str(x) + ",0): "
 					+ str(image[y,x,0]))
 
+#
+# This is a very hot part of the code. It is optimized
+# for speed and not for readability.
+#
 				for i in range(-1*convolution_range, convolution_range+1):
 					for j in range(-1*convolution_range, convolution_range+1):
-						# use the 2d gaussian to calculate the
-						# amount this pixel should contribute overall.
-						x_grad += Util.values_at(image, y+j, x+i, 0)* \
-							d_factor[i+convolution_range]* \
-							factor[j + convolution_range]
-
-						y_grad += Util.values_at(image, y+j, x+i, 0)* \
-							factor[i + convolution_range]* \
-							d_factor[j + convolution_range]
+#Util.values_at(image, y+j, x+i, 0)* \
+						x_grad += image[(y+j)%image_height, (x+i)%image_width,0] * \
+							dx_factor[j+convolution_range,i+convolution_range]
+							#d_factor[i+convolution_range]* \
+							#factor[j + convolution_range]
+#Util.values_at(image, y+j, x+i, 0)* \
+						y_grad += image[(y+j)%image_height, (x+i)%image_width,0] * \
+							dy_factor[j+convolution_range,i+convolution_range]
+							#factor[i + convolution_range]* \
+							#d_factor[j + convolution_range]
 
 				#separate_gradient[y,x,0] = numpy.sqrt(x_grad*x_grad + y_grad*y_grad)
 				separate_gradient[y,x,Derivative.WithRespectToY] = y_grad
