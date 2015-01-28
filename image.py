@@ -44,7 +44,7 @@ class Derivative:
 class Debug:
 	@classmethod
 	def Print(cls, string):
-		#print(string)
+		print(string)
 		pass
 
 class Gauss:
@@ -225,63 +225,19 @@ class Image:
 		while changes:
 			updated_changes = []
 			for (y,x) in changes:
-				Debug.Print("Here: (%d,%d)" % (y,x))
-				#look down
-				if y - 1 >= 0 and \
-				   connected_edges[y-1,x] == 0 and \
-				   edges[y-1,x] > continue_thresh:
-					Debug.Print("Updated changes: (%d,%d)" % (y-1, x))
-					updated_changes.append((y-1,x))
-					connected_edges[y-1,x,0] = edges[y-1,x]
-				#look up
-				if y + 1 < height and \
-				   connected_edges[y+1,x] == 0 and \
-				   edges[y+1,x] > continue_thresh:
-					Debug.Print("Updated changes: (%d,%d)" % (y+1, x))
-					updated_changes.append((y+1,x))
-					connected_edges[y+1,x,0] = edges[y+1,x]
-				#look left
-				if x - 1 >= 0 and \
-				   connected_edges[y,x-1] == 0 and \
-				   edges[y,x-1] > continue_thresh:
-					Debug.Print("Updated changes: (%d,%d)" % (y, x-1))
-					updated_changes.append((y,x-1))
-					connected_edges[y,x-1,0] = edges[y,x-1]
-				#look right
-				if x + 1 < height and \
-				   connected_edges[y,x+1] == 0 and \
-				   edges[y,x+1] > continue_thresh:
-					Debug.Print("Updated changes: (%d,%d)" % (y, x+1))
-					updated_changes.append((y,x+1))
-					connected_edges[y,x+1,0] = edges[y,x+1]
-				#look ne
-				if x + 1 < height and y + 1 < height and \
-				   connected_edges[y+1,x+1] == 0 and \
-				   edges[y+1,x+1] > continue_thresh:
-					Debug.Print("Updated changes: (%d,%d)" % (y+1, x+1))
-					updated_changes.append((y+1,x+1))
-					connected_edges[y+1,x+1,0] = edges[y+1,x+1]
-				#look se
-				if x + 1 < height and y - 1 > 0 and \
-				   connected_edges[y-1,x+1] == 0 and \
-				   edges[y-1,x+1] > continue_thresh:
-					Debug.Print("Updated changes: (%d,%d)" % (y-1, x+1))
-					updated_changes.append((y-1,x+1))
-					connected_edges[y-1,x+1,0] = edges[y-1,x+1]
-				#look sw
-				if x - 1 > 0 and y - 1 > 0 and \
-				   connected_edges[y-1,x-1] == 0 and \
-				   edges[y-1,x-1] > continue_thresh:
-					Debug.Print("Updated changes: (%d,%d)" % (y-1, x-1))
-					updated_changes.append((y-1,x-1))
-					connected_edges[y-1,x-1,0] = edges[y-1,x-1]
-				#look nw
-				if x - 1 > 0 and y + 1 < height and \
-				   connected_edges[y+1,x-1] == 0 and \
-				   edges[y+1,x-1] > continue_thresh:
-					Debug.Print("Updated changes: (%d,%d)" % (y+1, x-1))
-					updated_changes.append((y+1,x-1))
-					connected_edges[y+1,x-1,0] = edges[y+1,x-1]
+				for i in (-1,0,1):
+					for j in (-1,0,1):
+						if i==0 and j==0: continue
+						xx = x+i
+						yy = y+j
+						if xx >= 0 and xx < width and yy >= 0 and yy < height:
+							Debug.Print("(%d,%d): %f vs %f (%f)" % 
+								(yy, xx, edges[yy, xx], continue_thresh, connected_edges[yy,xx,0]))
+							if connected_edges[yy,xx,0] == 0 and \
+							   edges[yy,xx] > continue_thresh:
+								Debug.Print("(%d,%d): added" % (yy,xx))
+								connected_edges[yy,xx,0] = edges[yy,xx]
+								updated_changes.append((yy,xx))
 			changes = updated_changes
 		return connected_edges
 
@@ -609,10 +565,10 @@ if __name__ == "__main__":
 	print("Loading image.")
 #	image = Image("./line.jpg")
 #	image = Image.ImageFromFile("./circle.jpg")
-	image = Image.ImageFromFile("./building.jpg")
+#	image = Image.ImageFromFile("./building.jpg")
 #	image = Image.ImageFromFile("./building-crop.jpg")
 #	image = Image.ImageFromFile("./checker.jpg")
-#	image = Image.ImageFromFile("./checkers-crop.jpg")
+	image = Image.ImageFromFile("./checkers-crop.jpg")
 #	image = Image.ImageFromFile("./corner.jpg")
 
 #	image = image.corners(2.0, 0.1)
@@ -622,7 +578,7 @@ if __name__ == "__main__":
 #	them = image.native_gaussian(2.0)
 #	them.store_image("./them-gauss.jpg")
 
-	edges = image.canny(2.0, 0.8, 0.1, save="./me-grad")
+	edges = image.canny(2.0, 0.4, 0.1, save="./me-grad")
 	edges.store_image("./me-edges.jpg")
 	#edges = image.native_canny(2.0)
 	#edges.store_image("./them-edges.jpg")
