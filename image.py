@@ -44,7 +44,7 @@ class Derivative:
 class Debug:
 	@classmethod
 	def Print(cls, string):
-		print(string)
+		#print(string)
 		pass
 
 class Gauss:
@@ -120,12 +120,33 @@ class Image:
 		if self.image != None:
 			skimage.io.imsave(path, self.image)
 
-	def canny(self, sigma):
+	def canny(self, sigma, start_thresh, continue_thresh, save=None):
+		#
+		# First, change to grayscale
+		#
 		tmp = self._intensify(self.image)
-		g, gd = self._compute_gradient(tmp, sigma, save="./me-grad")
+
+		#
+		# Compute the gradient.
+		#
+		g, gd = self._compute_gradient(tmp, sigma, save=save)
+
+		#
+		# Thin the gradient.
+		#
 		tmp = self._thin_gradient(g, gd)
+
+		#
+		# Relative the edges to the max
+		#
 		up = self._relative_up(tmp)
-		return Image.ImageFromArray(up)
+
+		#
+		# Keep just the chained edges.
+		#
+		connected_edges = self._connected_edges(up, start_thresh, continue_thresh)
+
+		return Image.ImageFromArray(connected_edges)
 
 	def _up_rank(self, array):
 		height, width = array.shape
@@ -184,6 +205,85 @@ class Image:
 		y_deriv_base = self._relative_up(y_deriv_base)
 		y_deriv_image = Image.ImageFromArray(y_deriv_base)
 		y_deriv_image.store_image(path_base + "-y." + extension)
+
+	def _connected_edges(self, edges, start_thresh, continue_thresh):
+		#
+		#
+		#
+		height, width, depth = edges.shape
+
+		changes = []
+
+		connected_edges = numpy.zeros(height*width*depth)
+		connected_edges = connected_edges.reshape(height, width, depth)
+		for x in range(width):
+			for y in range(height):
+				if edges[y,x] >= start_thresh:
+					connected_edges[y,x,0] = edges[y,x]
+					changes.append((y,x))
+
+		while changes:
+			updated_changes = []
+			for (y,x) in changes:
+				Debug.Print("Here: (%d,%d)" % (y,x))
+				#look down
+				if y - 1 >= 0 and \
+				   connected_edges[y-1,x] == 0 and \
+				   edges[y-1,x] > continue_thresh:
+					Debug.Print("Updated changes: (%d,%d)" % (y-1, x))
+					updated_changes.append((y-1,x))
+					connected_edges[y-1,x,0] = edges[y-1,x]
+				#look up
+				if y + 1 < height and \
+				   connected_edges[y+1,x] == 0 and \
+				   edges[y+1,x] > continue_thresh:
+					Debug.Print("Updated changes: (%d,%d)" % (y+1, x))
+					updated_changes.append((y+1,x))
+					connected_edges[y+1,x,0] = edges[y+1,x]
+				#look left
+				if x - 1 >= 0 and \
+				   connected_edges[y,x-1] == 0 and \
+				   edges[y,x-1] > continue_thresh:
+					Debug.Print("Updated changes: (%d,%d)" % (y, x-1))
+					updated_changes.append((y,x-1))
+					connected_edges[y,x-1,0] = edges[y,x-1]
+				#look right
+				if x + 1 < height and \
+				   connected_edges[y,x+1] == 0 and \
+				   edges[y,x+1] > continue_thresh:
+					Debug.Print("Updated changes: (%d,%d)" % (y, x+1))
+					updated_changes.append((y,x+1))
+					connected_edges[y,x+1,0] = edges[y,x+1]
+				#look ne
+				if x + 1 < height and y + 1 < height and \
+				   connected_edges[y+1,x+1] == 0 and \
+				   edges[y+1,x+1] > continue_thresh:
+					Debug.Print("Updated changes: (%d,%d)" % (y+1, x+1))
+					updated_changes.append((y+1,x+1))
+					connected_edges[y+1,x+1,0] = edges[y+1,x+1]
+				#look se
+				if x + 1 < height and y - 1 > 0 and \
+				   connected_edges[y-1,x+1] == 0 and \
+				   edges[y-1,x+1] > continue_thresh:
+					Debug.Print("Updated changes: (%d,%d)" % (y-1, x+1))
+					updated_changes.append((y-1,x+1))
+					connected_edges[y-1,x+1,0] = edges[y-1,x+1]
+				#look sw
+				if x - 1 > 0 and y - 1 > 0 and \
+				   connected_edges[y-1,x-1] == 0 and \
+				   edges[y-1,x-1] > continue_thresh:
+					Debug.Print("Updated changes: (%d,%d)" % (y-1, x-1))
+					updated_changes.append((y-1,x-1))
+					connected_edges[y-1,x-1,0] = edges[y-1,x-1]
+				#look nw
+				if x - 1 > 0 and y + 1 < height and \
+				   connected_edges[y+1,x-1] == 0 and \
+				   edges[y+1,x-1] > continue_thresh:
+					Debug.Print("Updated changes: (%d,%d)" % (y+1, x-1))
+					updated_changes.append((y+1,x-1))
+					connected_edges[y+1,x-1,0] = edges[y+1,x-1]
+			changes = updated_changes
+		return connected_edges
 
 	def corners(self, sigma, threshold, neighborhood_size = 4):
 		sortable = []
@@ -509,8 +609,8 @@ if __name__ == "__main__":
 	print("Loading image.")
 #	image = Image("./line.jpg")
 #	image = Image.ImageFromFile("./circle.jpg")
-#	image = Image.ImageFromFile("./building.jpg")
-	image = Image.ImageFromFile("./building-crop.jpg")
+	image = Image.ImageFromFile("./building.jpg")
+#	image = Image.ImageFromFile("./building-crop.jpg")
 #	image = Image.ImageFromFile("./checker.jpg")
 #	image = Image.ImageFromFile("./checkers-crop.jpg")
 #	image = Image.ImageFromFile("./corner.jpg")
@@ -522,7 +622,7 @@ if __name__ == "__main__":
 #	them = image.native_gaussian(2.0)
 #	them.store_image("./them-gauss.jpg")
 
-	edges = image.canny(2.0)
+	edges = image.canny(2.0, 0.8, 0.1, save="./me-grad")
 	edges.store_image("./me-edges.jpg")
 	#edges = image.native_canny(2.0)
 	#edges.store_image("./them-edges.jpg")
