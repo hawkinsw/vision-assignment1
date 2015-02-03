@@ -300,6 +300,7 @@ class Image:
 					# update the neighborhood where this threshold
 					# value is bigger than existing values.
 					sortable.append((e, y, x))
+					corners_covariance[y,x] = e
 					for i in range(-1*neighborhood_size, neighborhood_size+1):
 						for j in range(-1*neighborhood_size, neighborhood_size+1):
 							# Using a slice index/assignment from numpy would be
@@ -316,6 +317,8 @@ class Image:
 		max_e = sortable[0][0]
 		for e,y,x in sortable:
 			Debug.Print("In neighborhood of (%d,%d):" % (y, x))
+			corners_covariance[y,x] = e
+			if e>max_e: max_e = e
 			for i in range(-1*neighborhood_size, neighborhood_size+1):
 				for j in range(-1*neighborhood_size, neighborhood_size+1):
 					if (x+i) > 0 and (x+i) < gradient_width and \
