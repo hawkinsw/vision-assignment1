@@ -120,6 +120,12 @@ class Image:
 		if self.image != None:
 			skimage.io.imsave(path, self.image)
 
+	def subsample(self, rate):
+		return Image.ImageFromArray(self._subsample(self.image, rate))
+
+	def _subsample(self, image, rate):
+		return image[0::rate, 0::rate, 0::]
+
 	def canny(self, sigma, start_thresh, continue_thresh, save=None):
 		#
 		# First, change to grayscale
