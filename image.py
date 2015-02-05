@@ -182,6 +182,10 @@ class Image:
 				(sig/biggest_sigma)*biggest_circle_radius,
 				shape=keypoint_image.shape
 				)
+			#
+			# Note: This will not work unless you apply
+			# https://github.com/sciunto/scikit-image/commit/b3f0c1eb963f791634fb3be982721bfcd1d536c2
+			# to your draw.py.
 			keypoint_image[rr,cc,0] = 1.0
 		return Image.ImageFromArray(keypoint_image)
 
