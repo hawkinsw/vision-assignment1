@@ -3,11 +3,14 @@
 from __future__ import print_function
 from operator import itemgetter
 
+import math
+
 import numpy
 import skimage
 import skimage.io
 import skimage.transform
 import skimage.feature
+import skimage.filter
 
 class Util:
 	@classmethod
@@ -125,6 +128,150 @@ class Image:
 
 	def _subsample(self, image, rate):
 		return image[0::rate, 0::rate, 0::]
+
+	def sift(self, k=math.pow(2,1.0/3.0), sigma=1.6, s=3):
+		keypoints = []
+		base_image = self.image
+
+		biggest_sigma = sigma
+		biggest_circle_radius = 10
+
+		keypoint_image = numpy.zeros(self.image.shape)
+		for o in range(0,3):
+			# we are doing a new octave!
+			octave = self._octave(base_image, k, sigma, s)
+
+			Debug.Print("octave size: %d" % len(octave))
+
+			# calculate DoGs
+			dogs = self._dog(octave)
+
+			Debug.Print("dogs size: %d" % len(dogs))
+
+			# calculate scale space extrema
+			extrema = self._scale_space_extrema(dogs)
+
+			for (y,x,c,s) in extrema:
+				Debug.Print("extrema at (y,x,c,s):(%d,%d,%d,%d)" % (y,x,c,s))
+				Debug.Print("keypoint at (y,x,c,sigma):(%d,%d,%d,%f)" % 
+					(y*(2**o),x*(2**o),c,math.pow(k,o)*math.pow(k,s)*sigma))
+				keypoint_sigma = (
+					math.pow(k,o)* # prefix the octave
+					math.pow(k,s)* # now adjust for the scale
+					sigma          # finally, give us sigma
+				)
+				keypoints.append((
+					y*(2**o), # each y coordinate may have been smushed when subsampling
+					x*(2**o), # use this trick to restore them back to the original value
+					c,
+					keypoint_sigma
+				))
+				if keypoint_sigma > biggest_sigma: biggest_sigma = keypoint_sigma
+
+			# Grab the 2*sigma image
+			base_image = octave[len(octave)-2-1]
+
+			# subsample the 2*sigma image at 2x rate.
+			base_image = self._subsample(base_image, 2)
+
+			# and, repeat.
+
+		for (y,x,c,sig) in keypoints:
+			rr, cc= skimage.draw.circle(y,
+				x,
+				(sig/biggest_sigma)*biggest_circle_radius,
+				shape=keypoint_image.shape
+				)
+			keypoint_image[rr,cc,0] = 1.0
+		return Image.ImageFromArray(keypoint_image)
+
+	def _is_extreme(self, y, x, c, upper, middle, lower):
+		maximum = True
+		minimum = True
+
+		height, width, depth = upper.shape
+		# iterate the neighborhood
+		comparison = middle[y,x,c]
+		for xx in range(-3, 4):
+			if not maximum and not minimum:
+				return False, False
+			for yy in range(-3, 4):
+				if not maximum and not minimum:
+					return False, False
+				c_yy = y + yy
+				c_xx = x + xx
+				if c_yy >= 0 and c_xx >= 0 and\
+				   c_yy < height and c_xx < width:
+					# Valid comparison point.
+
+					Debug.Print("c_xx: %d" % c_xx)
+					Debug.Print("c_yy: %d" % c_yy)
+					# maximum
+					if upper[c_yy, c_xx, c] >= comparison:
+						maximum = False
+					if lower[c_yy, c_xx, c] >= comparison:
+						maximum = False
+					# take special care not to compare
+					# to ourselves in the middle
+					if xx!=0 and yy!=0 and middle[c_yy, c_xx, c] >= comparison:
+						maximum = False
+
+					# minimum
+					if upper[c_yy, c_xx, c] <= comparison:
+						minimum = False
+					if lower[c_yy, c_xx, c] <= comparison:
+						minimum = False
+					# take special care not to compare
+					# to ourselves in the middle
+					if xx!=0 and yy!=0 and middle[c_yy, c_xx, c] <= comparison:
+						minimum = False
+		return (maximum, minimum)
+
+	def _scale_space_extrema(self, dogs):
+		assert len(dogs) != 0, "No dogs!"
+
+		height, width, depth = dogs[0].shape
+
+		extrema = []
+
+		for x in range(width):
+			for y in range(height):
+				for c in range(depth):
+					for s in range(len(dogs)):
+						if s-2 >= 0:
+							Debug.Print("(y,x,c,s): %d, %d, %d, %d" % (y, x, c, s))
+							maxi, mini =\
+								self._is_extreme(y, x, c, dogs[s], dogs[s-1], dogs[s-2])
+							if maxi:
+								Debug.Print("Maxi: (y,x,c,s): %d, %d, %d, %d" % (y, x, c, s))
+								extrema.append((y,x,c,s-1))
+							elif mini:
+								Debug.Print("Mini: (y,x,c,s): %d, %d, %d, %d" % (y, x, c, s))
+								extrema.append((y,x,c,s-1))
+		return extrema
+
+	def _dog(self, octave):
+		dogs = []
+		for s in range(len(octave)):
+			if s-1 >= 0:
+				# subtract
+				dogs.append(numpy.subtract(octave[s], octave[s-1]))
+		return dogs
+
+	def octave(self, k=math.pow(2,1.0/3.0), sigma=1.6, s=3):
+		height, width, depth = self.image.shape
+		assert depth == 1, "Depth is not singular."
+
+		return Image.ImageFromArray(self._octave(self.image, k, sigma, s))
+
+	def _octave(self, image, k, sigma, s):
+		octave = (s+3)*[None]
+		for level in range(s+3):
+			level_sigma = math.pow(k,level)*sigma
+			Debug.Print("level: %d" % level)
+			Debug.Print("level_sigma: %f" % level_sigma)
+			octave[level] = skimage.filter.gaussian_filter(image, level_sigma, mode='wrap')
+		return octave
 
 	def canny(self, sigma, start_thresh, continue_thresh, save=None):
 		#
@@ -608,7 +755,11 @@ if __name__ == "__main__":
 #	them = image.native_gaussian(2.0)
 #	them.store_image("./them-gauss.jpg")
 
-	edges = image.canny(2.0, 0.4, 0.1, save="./me-grad")
-	edges.store_image("./me-edges.jpg")
+	image = image.intensify()
+	image = image.sift()
+	image.store_image("./me-keypoints.jpg")
+
+	#edges = image.canny(2.0, 0.4, 0.1, save="./me-grad")
+	#edges.store_image("./me-edges.jpg")
 	#edges = image.native_canny(2.0)
 	#edges.store_image("./them-edges.jpg")
