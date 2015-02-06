@@ -1,0 +1,92 @@
+<html>
+<head>
+</head>
+<body>
+<h1></h1>
+<p>
+</p>
+<h2>Canny Edge Detector</h2>
+<p>
+</p>
+<h2>Harris Corner Detector</h2>
+<p>
+</p>
+<h2>Scale Invariant Feature Transform</h2>
+<h3>Derivation of Results of Section 4</h3>
+<p>
+In Section 4 of [Lowe 2004], Dr. Lowe presents a technique for
+subpixel localization. The technique is based on the Taylor Series
+expansion of the DoG evaluated at the candidate keypoints.
+<br>
+
+$$
+f(x) = f(a) + \frac{f'(a)}{1!}(x-a) + \frac{f''(a)}{2!}(x-a)^2
+$$
+Taking the derivative of $f(x)$:
+$$
+f'(x) = f'(a) + \frac{1}{2}f''(a)2x - \frac{1}{2}f''(a)2a
+$$
+$$
+f'(x) = f'(a) + xf''(a) - af''(a)
+$$
+$$
+f'(x) = f'(a) + f''(a)(x - a)
+$$
+and therefore
+$$
+x-a = -f''(a)^{-1}f'(a)
+$$
+
+This is the equivalent of Dr. Lowe's equation (3) when $f(a)$ is 
+the value of the DoG at the candidate location $a$.<br>
+
+Solving for $x-a$ is possible, as Dr. Lowe points out, using <a href=http://en.wikipedia.org/wiki/Hessian_matrix>Hessian matrixes</a> and approximating the derivatives using <a href=http://en.wikipedia.org/wiki/Finite_difference>finite differences</a>. <br>
+
+Thanks to [1], I was able to determine the Hessian used to take the second derivative of the DoG:
+$$
+\left[ \begin{matrix}
+\frac{\partial^2 D}{\partial \sigma \sigma} & \frac{\partial^2 D}{\partial \sigma y } & \frac{\partial^2 D}{\partial \sigma x } \\
+\frac{\partial^2 D}{\partial \sigma y} & \frac{\partial^2 D}{\partial y y } & \frac{\partial^2 D}{\partial y x } \\
+\frac{\partial^2 D}{\partial \sigma x} & \frac{\partial^2 D}{\partial y x} & \frac{\partial^2 D}{\partial x x }
+\end{matrix} \right]
+$$
+
+To solve for $x-a$, solve the linear system of equations:
+$$
+\left[ \begin{matrix}
+\frac{\partial^2 D}{\partial \sigma \sigma} & \frac{\partial^2 D}{\partial \sigma y } & \frac{\partial^2 D}{\partial \sigma x } \\
+\frac{\partial^2 D}{\partial \sigma y} & \frac{\partial^2 D}{\partial y y } & \frac{\partial^2 D}{\partial y x } \\
+\frac{\partial^2 D}{\partial \sigma x} & \frac{\partial^2 D}{\partial y x} & \frac{\partial^2 D}{\partial x x }
+\end{matrix} \right]
+\left[ \begin{matrix}
+\sigma \\
+y \\
+x
+\end{matrix} \right]
+= - 
+\left[
+\begin{matrix}
+\frac{\partial D}{\partial \sigma} \\
+\frac{\partial D}{\partial y} \\
+\frac{\partial D}{\partial x}
+\end{matrix}
+\right]
+$$
+
+</p>
+
+Implementing the solver is a battle with the details. On my first 
+attempt, I was able to calculate the differences and move the candidate
+point. However, this did not seem to converge reliably. 
+Taking a hint from a well-known reference implementation [2], I limited the 
+number of attempted interpolations to 5.*<br>
+<hr>
+Footnotes:<br>
+*: The Sift++ implementation does <i>not</i> recalculate a sigma value; it 
+considers only the x and y coordinates in the current scale.
+<hr>
+References:<br>
+[1]: <a href=http://www.cs.ucf.edu/courses/cap4453/sift/>CAP 4453 Robot Vision Spring 2015 Home Page</a><br>
+[2]: <a href=http://www.robots.ox.ac.uk/~vedaldi/assets/siftpp/>Sift++</a>
+</body>
+</html>
