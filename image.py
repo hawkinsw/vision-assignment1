@@ -44,6 +44,92 @@ class Derivative:
 	WithRespectToY = 0
 	WithRespectToX = 1
 
+	#
+	# Parameter function must look like this:
+	#
+	# function[s] -> indexes a numpy array using sigma.
+	# function[s][y,x,c] -> indexes that numpy array.
+	#
+
+	#
+	# References:
+	#
+	# siftppt-1.ppt
+	# http://en.wikipedia.org/wiki/Finite_difference
+	#
+
+	@classmethod
+	def Sigma1d(cls, (sigma, y, x, c), function):
+		max_sigma = len(function)
+		max_y, max_x, max_c = function[0].shape
+		return (function[(sigma+1)%max_sigma][y,x,c] - function[sigma-1][y,x,c])/2.0
+
+	@classmethod
+	def X1d(cls, (sigma, y, x, c), function):
+		max_sigma = len(function)
+		max_y, max_x, max_c = function[0].shape
+		return (function[sigma][y,(x+1)%max_x,c] - function[sigma][y,x-1,c])/2.0
+
+	@classmethod
+	def Y1d(cls, (sigma, y, x, c), function):
+		max_sigma = len(function)
+		max_y, max_x, max_c = function[0].shape
+		return (function[sigma][(y+1)%max_y,x,c] - function[sigma][y-1,x,c])/2.0
+
+	@classmethod
+	def SigmaSigma2d(cls, (sigma, y, x, c), function):
+		max_sigma = len(function)
+		max_y, max_x, max_c = function[0].shape
+		return (function[sigma-1][y,x,c]  -
+			(2*function[sigma][y,x,c]) +
+			function[(sigma+1)%max_sigma][y,x,c])
+
+	@classmethod
+	def YY2d(cls, (sigma, y, x, c), function):
+		max_sigma = len(function)
+		max_y, max_x, max_c = function[0].shape
+		return (function[sigma][y-1,x,c]  -
+			(2*function[sigma][y,x,c]) +
+			function[sigma][(y+1)%max_y,x,c])
+
+	@classmethod
+	def XX2d(cls, (sigma, y, x, c), function):
+		max_sigma = len(function)
+		max_y, max_x, max_c = function[0].shape
+		return (function[sigma][y,x-1,c]  -
+			(2*function[sigma][y,x,c]) +
+			function[sigma][y,(x+1)%max_x,c])
+
+	@classmethod
+	def SigmaY2d(cls, (sigma, y, x, c), function):
+		max_sigma = len(function)
+		max_y, max_x, max_c = function[0].shape
+		return (
+			((function[(sigma+1)%max_sigma][(y+1)%max_y,x,c] - function[sigma-1][(y+1)%max_y,x,c]) -
+			(function[(sigma+1)%max_sigma][y-1,x,c] - function[sigma-1][y-1,x,c])) /
+			4.0
+		)
+
+	@classmethod
+	def SigmaX2d(cls, (sigma, y, x, c), function):
+		max_sigma = len(function)
+		max_y, max_x, max_c = function[0].shape
+		return (
+			((function[(sigma+1)%max_sigma][y,(x+1)%max_x,c] - function[sigma-1][y,(x+1)%max_x,c]) -
+			(function[(sigma+1)%max_sigma][y,x-1,c] - function[sigma-1][y,x-1,c])) /
+			4.0
+		)
+
+	@classmethod
+	def YX2d(cls, (sigma, y, x, c), function):
+		max_sigma = len(function)
+		max_y, max_x, max_c = function[0].shape
+		return (
+			((function[sigma][(y+1)%max_y,(x+1)%max_x,c] - function[sigma][y-1,(x+1)%max_x,c]) -
+			(function[sigma][(y+1)%max_y,x-1,c] - function[sigma][y-1,x-1,c])) /
+			4.0
+		)
+
 class Debug:
 	@classmethod
 	def Print(cls, string):
@@ -130,14 +216,20 @@ class Image:
 		return image[0::rate, 0::rate, 0::]
 
 	def sift(self, k=math.pow(2,1.0/3.0), sigma=1.6, s=3):
+		""" Perform SIFT.
+
+		"""
 		keypoints = []
+		filtered_keypoints = []
 		base_image = self.image
 
 		biggest_sigma = sigma
 		biggest_circle_radius = 10
 
-		keypoint_image = numpy.zeros(self.image.shape)
-		for o in range(0,3):
+		filtered_keypoint_image = numpy.zeros(self.image.shape)
+		all_keypoint_image = numpy.zeros(self.image.shape)
+
+		for o in range(4):
 			# we are doing a new octave!
 			octave = self._octave(base_image, k, sigma, s)
 
@@ -145,6 +237,7 @@ class Image:
 
 			# calculate DoGs
 			dogs = self._dog(octave)
+			dog_height, dog_width, dog_depth = dogs[0].shape
 
 			Debug.Print("dogs size: %d" % len(dogs))
 
@@ -152,21 +245,132 @@ class Image:
 			extrema = self._scale_space_extrema(dogs)
 
 			for (y,x,c,s) in extrema:
-				Debug.Print("extrema at (y,x,c,s):(%d,%d,%d,%d)" % (y,x,c,s))
-				Debug.Print("keypoint at (y,x,c,sigma):(%d,%d,%d,%f)" % 
+				x_orig = (s,y,x,c)
+				x_hat = (s,y,x,c)
+
+				Debug.Print("extrema at (s,y,x,c):(%d,%d,%d,%d)" % x_orig)
+				Debug.Print("keypoint at (y,x,c,sigma):(%d,%d,%d,%f)" %
 					(y*(2**o),x*(2**o),c,math.pow(k,o)*math.pow(k,s)*sigma))
+
+				#
+				# Limiting the number of
+				# iterations is a trick from
+				# Sift++. See writeup for more
+				# information.
+				#
+				flapping = False
+				for attempts in range(5):
+					adjusted = False
+
+					Debug.Print("x_hat (sigma,y,x): (%f,%f,%f)" % (x_hat[0],x_hat[1],x_hat[2]))
+					a = numpy.array([
+						[ Derivative.SigmaSigma2d(x_hat, dogs),
+						  Derivative.SigmaY2d(x_hat, dogs),
+						  Derivative.SigmaX2d(x_hat, dogs)
+						],
+						[ Derivative.SigmaY2d(x_hat, dogs),
+						  Derivative.YY2d(x_hat, dogs),
+						  Derivative.YX2d(x_hat, dogs)
+						],
+						[ Derivative.SigmaX2d(x_hat, dogs),
+						  Derivative.YX2d(x_hat, dogs),
+						  Derivative.XX2d(x_hat, dogs)
+						]
+					])
+					b = numpy.array([-1.0*Derivative.Sigma1d(x_hat, dogs),
+						-1.0*Derivative.Y1d(x_hat, dogs),
+						-1.0*Derivative.X1d(x_hat, dogs)
+					])
+
+					Debug.Print("Hessian/Second derivative: " + repr(a))
+					Debug.Print("First derivative: " + repr(b))
+
+					#
+					# Solve for x in ax = b
+					#
+					delta = numpy.linalg.solve(a,b)
+
+					Debug.Print("Delta (sigma,y,x): (%f,%f,%f)" % (delta[0],delta[1],delta[2]))
+					new_sigma = x_hat[0]
+					new_y = x_hat[1]
+					new_x = x_hat[2]
+					new_c = x_hat[3]
+
+					if delta[1] > 0.5:
+						if new_y + 1 < dog_height:
+							new_y += 1
+							adjusted = True
+						else:
+							Debug.Print("Wanted to adjust y (up), but would have been OOB.")
+							adjusted = False
+					elif delta[1] < -0.5:
+						if new_y - 1 >= 0:
+							new_y -= 1
+							adjusted = True
+						else:
+							Debug.Print("Wanted to adjust y (down), but would have been OOB.")
+							adjusted = False
+					if delta[2] > 0.5:
+						if new_x + 1 < dog_width:
+							new_x += 1
+							adjusted = True
+						else:
+							Debug.Print("Wanted to adjust x (up), but would have been OOB.")
+							adjusted = False
+					elif delta[2] < -0.5:
+						if new_x - 1 >= 0:
+							new_x -= 1
+							adjusted = True
+						else:
+							Debug.Print("Wanted to adjust x (down), but would have been OOB.")
+							adjusted = False
+
+					x_hat = (new_sigma, new_y, new_x, new_c)
+
+					if not adjusted:
+						break
+					else:
+						Debug.Print("Re-interpolating with a new x_hat (%d)" % attempts)
+				else:
+					flapping = True
+
+				Debug.Print("Finished sub-pixel localization (Flapping? %s): (s,y,x,c)o vs (s,y,x,c)n: (%d,%d,%d,%d) vs (%d,%d,%d,%d)" % ((flapping,) + x_orig + x_hat))
+
+				d_x_hat = dogs[s][y,x,c] + 0.5*(
+					(Derivative.X1d(x_orig,dogs)*x_hat[2]) +
+					(Derivative.Y1d(x_orig,dogs)*x_hat[1]) +
+					(Derivative.Sigma1d(x_orig,dogs)*x_hat[0])
+				)
+				Debug.Print("d_x_hat: %f" % d_x_hat)
+
 				keypoint_sigma = (
 					math.pow(k,o)* # prefix the octave
 					math.pow(k,s)* # now adjust for the scale
 					sigma          # finally, give us sigma
 				)
+
+				#
+				# Only keep the points with a good threshold value.
+				#
+				if d_x_hat >= 0.03:
+					filtered_keypoints.append((
+					y*(2**o), # each x,y coordinate may have been smushed when subsampling
+					x*(2**o), # use this trick to restore them back to the original value
+					c,
+					keypoint_sigma
+					))
+
+				#
+				# Keep all the candidate points!
+				#
 				keypoints.append((
-					y*(2**o), # each y coordinate may have been smushed when subsampling
+					y*(2**o), # each x,y coordinate may have been smushed when subsampling
 					x*(2**o), # use this trick to restore them back to the original value
 					c,
 					keypoint_sigma
 				))
-				if keypoint_sigma > biggest_sigma: biggest_sigma = keypoint_sigma
+				if keypoint_sigma > biggest_sigma:
+					biggest_sigma = keypoint_sigma
 
 			# Grab the 2*sigma image
 			base_image = octave[len(octave)-2-1]
@@ -176,18 +380,37 @@ class Image:
 
 			# and, repeat.
 
-		for (y,x,c,sig) in keypoints:
+		#
+		# Draw (filtered and all) keypoints with circles relative to their
+		# scale. Bigger circles mean a higher scale.
+		#
+		for (y,x,c,sig) in filtered_keypoints:
 			rr, cc= skimage.draw.circle(y,
 				x,
 				(sig/biggest_sigma)*biggest_circle_radius,
-				shape=keypoint_image.shape
+				shape=filtered_keypoint_image.shape
 				)
 			#
 			# Note: This will not work unless you apply
 			# https://github.com/sciunto/scikit-image/commit/b3f0c1eb963f791634fb3be982721bfcd1d536c2
 			# to your draw.py.
-			keypoint_image[rr,cc,0] = 1.0
-		return Image.ImageFromArray(keypoint_image)
+			filtered_keypoint_image[rr,cc,0] = 1.0
+
+		for (y,x,c,sig) in keypoints:
+			rr, cc= skimage.draw.circle(y,
+				x,
+				(sig/biggest_sigma)*biggest_circle_radius,
+				shape=all_keypoint_image.shape
+				)
+			#
+			# Note: See above.
+			all_keypoint_image[rr,cc,0] = 1.0
+
+		Debug.Print("# all keypoints: %d" % len(keypoints))
+		Debug.Print("# filtered keypoints: %d" % len(filtered_keypoints))
+
+		return (Image.ImageFromArray(filtered_keypoint_image),
+			Image.ImageFromArray(all_keypoint_image))
 
 	def _is_extreme(self, y, x, c, upper, middle, lower):
 		maximum = True
