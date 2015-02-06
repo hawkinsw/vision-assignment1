@@ -611,7 +611,7 @@ class Image:
 						xx = x+i
 						yy = y+j
 						if xx >= 0 and xx < width and yy >= 0 and yy < height:
-							Debug.Print("(%d,%d): %f vs %f (%f)" % 
+							Debug.Print("(%d,%d): %f vs %f (%f)" %
 								(yy, xx, edges[yy, xx], continue_thresh, connected_edges[yy,xx,0]))
 							if connected_edges[yy,xx,0] == 0 and \
 							   edges[yy,xx] > continue_thresh:
@@ -848,7 +848,7 @@ class Image:
 					convolve = 0.0
 					for i in range(-1*support, support+1):
 						for j in range(-1*support, support+1):
-							convolve += (kernel[j+support, i+support] * 
+							convolve += (kernel[j+support, i+support] *
 								Util.values_at(image, i+y, j+x, d))
 					Debug.Print("(%d, %d, %d): %f to %f" % (y,x,d,image[y,x,d], convolve))
 					gimage[y,x,d] = convolve
