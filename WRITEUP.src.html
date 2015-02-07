@@ -99,12 +99,15 @@ threshold, I generated images based on a range of parameters:
 <td>start threshold</td><td>0.4</td><td>0.6</td><td>0.1</td>
 </tr>
 <tr>
-<td>start threshold</td><td>0.1</td><td>0.3</td><td>0.1</td>
+<td>continue threshold</td><td>0.1</td><td>0.3</td><td>0.1</td>
 </tr>
 </table>
 The entire set of images are available for viewing by clicking on the links 
 below. NB: There are lots of them!<br>
-<div onclick="showhide('building');" style="text-decoration:underline;">Show/hide full results</div><br>
+<div onclick="showhide('circle');" style="text-decoration:underline;">Show/hide full Circle results</div><br>
+<div id=circle style="display:none">
+</div>
+<div onclick="showhide('building');" style="text-decoration:underline;">Show/hide full Building results</div><br>
 <div id=building style="display:none">
 <table>
 <tr>
@@ -1594,7 +1597,7 @@ Continue: 0.3&nbsp;
 </tr>
 </table>
 </div>
-<div onclick="showhide('mandrill');" style="text-decoration:underline;">Show/hide full results</div><br>
+<div onclick="showhide('mandrill');" style="text-decoration:underline;">Show/hide full Mandrill results</div><br>
 <div id=mandrill style="display:none">
 <table>
 <tr>
@@ -3162,8 +3165,455 @@ corners. See line 736.
 </p>
 <h3>Results</h3>
 <p>
+To determine the optimal values for sigma, threshold and neighborhood size
+I generated images based on a range of parameters.
+The entire set of images are available for viewing by clicking on the links 
+below. NB: There are lots of them!<br>
+<div onclick="showhide('checkercorners');" style="text-decoration:underline;">Show/hide full Checkerboard results</div><br>
+<div id=checkercorners style="display:none">
+<table>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.3&nbsp;
+Neighborhood: 4&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.0-0.3-4.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.3&nbsp;
+Neighborhood: 5&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.0-0.3-5.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.3&nbsp;
+Neighborhood: 6&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.0-0.3-6.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.4&nbsp;
+Neighborhood: 4&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.0-0.4-4.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.4&nbsp;
+Neighborhood: 5&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.0-0.4-5.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.4&nbsp;
+Neighborhood: 6&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.0-0.4-6.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.5&nbsp;
+Neighborhood: 4&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.0-0.5-4.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.5&nbsp;
+Neighborhood: 5&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.0-0.5-5.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.5&nbsp;
+Neighborhood: 6&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.0-0.5-6.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.6&nbsp;
+Neighborhood: 4&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.0-0.6-4.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.6&nbsp;
+Neighborhood: 5&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.0-0.6-5.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.6&nbsp;
+Neighborhood: 6&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.0-0.6-6.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.1&nbsp;
+Threshold: 0.3&nbsp;
+Neighborhood: 4&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.1-0.3-4.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.1&nbsp;
+Threshold: 0.3&nbsp;
+Neighborhood: 5&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.1-0.3-5.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.1&nbsp;
+Threshold: 0.3&nbsp;
+Neighborhood: 6&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.1-0.3-6.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.1&nbsp;
+Threshold: 0.4&nbsp;
+Neighborhood: 4&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.1-0.4-4.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.1&nbsp;
+Threshold: 0.4&nbsp;
+Neighborhood: 5&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.1-0.4-5.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.1&nbsp;
+Threshold: 0.4&nbsp;
+Neighborhood: 6&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.1-0.4-6.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.1&nbsp;
+Threshold: 0.5&nbsp;
+Neighborhood: 4&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.1-0.5-4.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.1&nbsp;
+Threshold: 0.5&nbsp;
+Neighborhood: 5&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.1-0.5-5.jpg height=240 width=320></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.1&nbsp;
+Threshold: 0.5&nbsp;
+Neighborhood: 6&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/checker/1.1-0.5-6.jpg height=240 width=320></td>
+</tr>
+</table>
+</div>
+<div onclick="showhide('buildingcorners');" style="text-decoration:underline;">Show/hide full Building results</div><br>
+<div id=buildingcorners style="display:none">
+<table>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.3&nbsp;
+Neighborhood: 4&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/building/1.0-0.3-4.jpg height=288 width=384></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.3&nbsp;
+Neighborhood: 5&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/building/1.0-0.3-5.jpg height=288 width=384></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.3&nbsp;
+Neighborhood: 6&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/building/1.0-0.3-6.jpg height=288 width=384></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.4&nbsp;
+Neighborhood: 4&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/building/1.0-0.4-4.jpg height=288 width=384></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.4&nbsp;
+Neighborhood: 5&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/building/1.0-0.4-5.jpg height=288 width=384></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.4&nbsp;
+Neighborhood: 6&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/building/1.0-0.4-6.jpg height=288 width=384></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.5&nbsp;
+Neighborhood: 4&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/building/1.0-0.5-4.jpg height=288 width=384></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.5&nbsp;
+Neighborhood: 5&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/building/1.0-0.5-5.jpg height=288 width=384></td>
+</tr>
+<tr>
+<td colspan=1>
+Sigma: 1.0&nbsp;
+Threshold: 0.5&nbsp;
+Neighborhood: 6&nbsp;
+</td>
+</tr>
+<tr>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./results-corners/building/1.0-0.5-6.jpg height=288 width=384></td>
+</tr>
+</table>
+</div>
+Looking at the results, I determined that $\sigma$ of 1.0, threshold
+of 0.3 and neighborhood size of 5 gave good results. Using those parameters,
+I ran the corner detector on two other sample images.<br>
+<div id=flowercorners>
+<table>
+<tr>
+<td colspan=2>
+Sigma: 1.0&nbsp;
+Threshold: 0.3&nbsp;
+Neighborhood: 5&nbsp;
+</td>
+</tr>
+<tr>
+<td>Original image</td>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./flower.jpg height=240 width=320></td>
+<td><img src=./results-corners/flower/1.0-0.3-5.jpg height=240 width=320></td>
+</tr>
+</table>
+</div>
+<div id=beamscorners>
+<table>
+<tr>
+<td colspan=2>
+Sigma: 1.0&nbsp;
+Threshold: 0.3&nbsp;
+Neighborhood: 5&nbsp;
+</td>
+</tr>
+<tr>
+<td>Original image</td>
+<td>Final Result</td>
+</tr>
+<tr>
+<td><img src=./beams.jpg height=213 width=320></td>
+<td><img src=./results-corners/beams/1.0-0.3-5.jpg height=213 width=320></td>
+</tr>
+</table>
+</div>
+Although my implementation detects a suprisingly small number of corners
+on the flower image, the original does not seem to have many "corners". The
+results for the light beams seem reasonable.
 </p>
-
 <h2>Scale Invariant Feature Transform (SIFT)</h2>
 <p>
 As Dr. Lowe says in [Lowe 2004], SIFT is a cascading filter. The computationally
