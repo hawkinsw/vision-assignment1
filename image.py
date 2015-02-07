@@ -5,6 +5,8 @@ from operator import itemgetter
 
 import math
 
+import os
+
 import numpy
 import skimage
 import skimage.io
@@ -985,28 +987,163 @@ class Image:
 					+ str(Util.discretize_angle(gradient_direction[y,x])))
 		return (separate_gradient, gradient_direction)
 
+def frange(low, high, step):
+	current = low
+	# Rounding errors!
+	while current<=(high+0.0000001):
+		yield current
+		current+=step
+
+def test_harris(images):
+	sigma_low = 1.0
+	sigma_high = 1.0
+	sigma_step = 0.1
+
+	thresh_low = 0.3
+	thresh_high = 0.3
+	thresh_step = 0.1
+
+	neighborhood_low = 5
+	neighborhood_high = 6
+	neighborhood_step = 1
+
+	for i in images:
+		print("<table>")
+		for sigma in frange(sigma_low,
+			sigma_high,
+			sigma_step):
+			for thresh in frange(
+				thresh_low,
+				thresh_high,
+				thresh_step):
+				for neighborhood in range(
+					neighborhood_low,
+					neighborhood_high,
+					neighborhood_step):
+					Debug.Print("sigma, thresh, neighborhood: %f %f %d" % (sigma, thresh, neighborhood))
+					image = Image.ImageFromFile(i + ".jpg")
+					try:
+						os.mkdir("./results-corners/" + i + "/")
+					except:
+						pass
+					save = "./results-corners/" + i + "/" +\
+						str(sigma) + "-" +\
+						str(thresh) + "-" +\
+						str(neighborhood)
+
+					corners = image.corners(sigma,
+						thresh,
+						neighborhood_size=neighborhood)
+					corners.store_image(save+".jpg")
+					print("<tr>")
+					print("<td colspan=1>")
+					print("Sigma: " + str(sigma) + "&nbsp;")
+					print("Threshold: " + str(thresh) + "&nbsp;")
+					print("Neighborhood: " + str(neighborhood) + "&nbsp;")
+					print("</td>")
+					print("</tr>")
+
+					print("<tr>")
+					print("<td>Final Result</td>")
+					print("</tr>")
+					print("<tr>")
+					print("<td><img src=" + save + ".jpg height=" + str(image.height()/2) +  " width=" + str(image.width()/2) + "></td>")
+					print("</tr>")
+		print("</table>")
+
+def test_canny(images):
+	sigma_low = 1.0
+	sigma_high = 2.0
+	sigma_step = 0.1
+
+	start_thresh_low = 0.4
+	start_thresh_high = 0.6
+	start_thresh_step = 0.1
+
+	continue_thresh_low = 0.1
+	continue_thresh_high = 0.3
+	continue_thresh_step = 0.1
+
+	for i in images:
+		print("<table>")
+		for sigma in frange(sigma_low,
+			sigma_high,
+			sigma_step):
+			for start_thresh in frange(
+				start_thresh_low,
+				start_thresh_high,
+				start_thresh_step):
+				for continue_thresh in frange(
+					continue_thresh_low,
+					continue_thresh_high,
+					continue_thresh_step):
+					Debug.Print("sigma, start, continue: %f %f %f" % (sigma, start_thresh, continue_thresh))
+					image = Image.ImageFromFile(i + ".jpg")
+					try:
+						os.mkdir("./results/" + i + "/")
+					except:
+						pass
+					save = "./results/" + i + "/" +\
+						str(sigma) + "-" +\
+						str(start_thresh) + "-" +\
+						str(continue_thresh)
+
+					edges = image.canny(sigma,
+						start_thresh,
+						continue_thresh,
+						save=save+"-grad")
+					edges.store_image(save+".jpg")
+					print("<tr>")
+					print("<td colspan=3>")
+					print("Sigma: " + str(sigma) + "&nbsp;")
+					print("Start: " + str(start_thresh) + "&nbsp;")
+					print("Continue: " + str(continue_thresh) + "&nbsp;")
+					print("</td>")
+					print("</tr>")
+
+					print("<tr>")
+					print("<td>X Derivative</td><td>Y Derivative</td><td>Final Result</td>")
+					print("</tr>")
+					print("<tr>")
+					print("<td><img src=" + save + "-grad-x.jpg height=" + str(image.height()/2) +  " width=" + str(image.width()/2) + "></td>")
+					print("<td><img src=" + save + "-grad-y.jpg height=" + str(image.height()/2) +  " width=" + str(image.width()/2) + "></td>")
+					print("<td><img src=" + save + ".jpg height=" + str(image.height()/2) +  " width=" + str(image.width()/2) + "></td>")
+					print("</tr>")
+		print("</table>")
+
+def test_sift(images):
+	for i in images:
+		print("<table>")
+		image = Image.ImageFromFile(i + ".jpg")
+		try:
+			os.mkdir("./results-sift/" + i + "/")
+		except:
+			pass
+		save = "./results-sift/" + i + "/"
+
+		image = image.intensify()
+		(filtered_keypoints, all_keypoints) = image.sift()
+		filtered_keypoints.store_image(save+"filtered.jpg")
+		all_keypoints.store_image(save+"all.jpg")
+
+		print("<tr>")
+		print("<td>Original</td><td>All</td><td>Filtered</td>")
+		print("</tr>")
+		print("<tr>")
+		print("<td><img src=" + i + ".jpg height=" + str(image.height()/2) +  " width=" + str(image.width()/2) + "></td>")
+		print("<td><img src=" + save + "all.jpg height=" + str(image.height()/2) +  " width=" + str(image.width()/2) + "></td>")
+		print("<td><img src=" + save + "filtered.jpg height=" + str(image.height()/2) +  " width=" + str(image.width()/2) + "></td>")
+		print("</tr>")
+		print("</table>")
+
 if __name__ == "__main__":
-	print("Loading image.")
-#	image = Image("./line.jpg")
-#	image = Image.ImageFromFile("./circle.jpg")
-#	image = Image.ImageFromFile("./building.jpg")
-#	image = Image.ImageFromFile("./building-crop.jpg")
-#	image = Image.ImageFromFile("./checker.jpg")
-	image = Image.ImageFromFile("./checkers-crop.jpg")
-#	image = Image.ImageFromFile("./corner.jpg")
-
-#	image = image.corners(2.0, 0.1)
-#	image = image.native_corners(1.0, 0.1)
-#	me = image.compute_gaussian(2.0)
-#	me.store_image("./me-gauss.jpg")
-#	them = image.native_gaussian(2.0)
-#	them.store_image("./them-gauss.jpg")
-
-	image = image.intensify()
-	image = image.sift()
-	image.store_image("./me-keypoints.jpg")
-
-	#edges = image.canny(2.0, 0.4, 0.1, save="./me-grad")
-	#edges.store_image("./me-edges.jpg")
-	#edges = image.native_canny(2.0)
-	#edges.store_image("./them-edges.jpg")
+	try:
+		os.mkdir("./results-sift/")
+		os.mkdir("./results-corners/")
+		os.mkdir("./results/")
+	except:
+		pass
+	#test_canny(["circle", "beams", "building", "flower", "mandrill"])
+	test_canny(["circle"])
+	#test_harris(["beams"])
+	#test_sift(["beams"])
