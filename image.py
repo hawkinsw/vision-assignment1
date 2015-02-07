@@ -220,6 +220,7 @@ class Image:
 		return Image.ImageFromArray(self._subsample(self.image, rate))
 
 	def _subsample(self, image, rate):
+		""" Returns a copy of image subsampled at rate. """
 		return image[0::rate, 0::rate, 0::]
 
 	def sift(self, k=math.pow(2,1.0/3.0), sigma=1.6, s=3):
@@ -462,6 +463,7 @@ class Image:
 		return (maximum, minimum)
 
 	def _scale_space_extrema(self, dogs):
+		""" Calculate a list of the scale space extrema """
 		assert len(dogs) != 0, "No dogs!"
 
 		height, width, depth = dogs[0].shape
@@ -485,6 +487,7 @@ class Image:
 		return extrema
 
 	def _dog(self, octave):
+		""" Create the Differences of Gaussians from a set an octave. """
 		dogs = []
 		for s in range(len(octave)):
 			if s-1 >= 0:
@@ -499,11 +502,15 @@ class Image:
 		return Image.ImageFromArray(self._octave(self.image, k, sigma, s))
 
 	def _octave(self, image, k, sigma, s):
+		""" Calculate an entire octave. """
 		octave = (s+3)*[None]
 		for level in range(s+3):
 			level_sigma = math.pow(k,level)*sigma
 			Debug.Print("level: %d" % level)
 			Debug.Print("level_sigma: %f" % level_sigma)
+			#
+			# Use the built-in Gaussian filter here for simplicity.
+			#
 			octave[level] = skimage.filter.gaussian_filter(image, level_sigma, mode='wrap')
 		return octave
 
@@ -536,6 +543,7 @@ class Image:
 		return Image.ImageFromArray(connected_edges)
 
 	def _up_rank(self, array):
+		""" Add a z dimension to array. """
 		height, width = array.shape
 
 		aa = numpy.zeros(height*width*1)
@@ -546,6 +554,7 @@ class Image:
 		return aa
 
 	def _down_rank(self, array):
+		""" Remove the z dimension from array. """
 		height, width, depth = array.shape
 
 		aa = numpy.zeros(height*width)
@@ -557,6 +566,7 @@ class Image:
 
 
 	def _relative_up(self, image):
+		""" Make an array where all values are relative to the max of image."""
 		maxi = 0.0
 		height, width, parts = image.shape
 		up = numpy.zeros(height*width*parts)
@@ -573,6 +583,7 @@ class Image:
 		return up
 
 	def _save_separate_gradients(self, gradiants, path_base, extension="jpg"):
+		"""Save the x and y gradients into separate -x and -y files. """
 		height, width, depth = gradiants.shape
 
 		assert depth == 2, "Depth must be 2 (ie, x and y derivatives)"
@@ -594,9 +605,7 @@ class Image:
 		y_deriv_image.store_image(path_base + "-y." + extension)
 
 	def _connected_edges(self, edges, start_thresh, continue_thresh):
-		#
-		#
-		#
+		"""Calculate the connected edges."""
 		height, width, depth = edges.shape
 
 		changes = []
@@ -743,10 +752,13 @@ class Image:
 			sigma,
 			mode='wrap',
 			multichannel=True))
+
 	def intensify(self):
+		"""Convert to a grayscale image. """
 		return Image.ImageFromArray(self._intensify(self.image))
 
 	def _intensify(self, image):
+		"""Convert to a grayscale array. """
 		(image_height, image_width, image_channels) = image.shape
 		intensity = numpy.zeros(image_height*image_width*1)
 		intensity = intensity.reshape(image_height, image_width, 1)
@@ -956,6 +968,7 @@ class Image:
 					gradient_direction[y,x] = numpy.rad2deg(numpy.pi/2.0)
 				else:
 					gradient_direction[y,x] = numpy.rad2deg(numpy.arctan(y_grad/x_grad))
+
 				Debug.Print("gradient image (y,x,0): ("
 					+ str(y)
 					+ ","
