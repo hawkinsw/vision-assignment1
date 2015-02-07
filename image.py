@@ -537,6 +537,17 @@ class Image:
 		#
 		up = self._relative_up(tmp)
 
+		#mean = numpy.mean(self._down_rank(up))
+		mean = numpy.mean(up)
+		Debug.Print("mean: %s" % mean)
+
+		#
+		# Calculate threshold values based on
+		# the mean of the intensity of the edges.
+		#
+		start_thresh = start_thresh * mean
+		continue_thresh = continue_thresh * mean
+
 		#
 		# Keep just the chained edges.
 		#
