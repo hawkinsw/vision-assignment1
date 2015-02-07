@@ -209,7 +209,14 @@ class Image:
 		if self.image != None:
 			skimage.io.imsave(path, self.image)
 
+	def height(self):
+		return self.image.shape[0]
+
+	def width(self):
+		return self.image.shape[1]
+
 	def subsample(self, rate):
+		""" Returns a new image subsampled at rate. """
 		return Image.ImageFromArray(self._subsample(self.image, rate))
 
 	def _subsample(self, image, rate):
