@@ -956,24 +956,17 @@ class Image:
 				Debug.Print("(y,x,0): (" + str(y) + "," + str(x) + ",0): "
 					+ str(image[y,x,0]))
 
-#
-# This is a very hot part of the code. It is optimized
-# for speed and not for readability.
-#
+				#
+				# This is a very hot part of the code. It is optimized
+				# for speed and not for readability.
+				#
 				for i in range(-1*convolution_range, convolution_range+1):
 					for j in range(-1*convolution_range, convolution_range+1):
-#Util.values_at(image, y+j, x+i, 0)* \
 						x_grad += image[(y+j)%image_height, (x+i)%image_width,0] * \
 							dx_factor[j+convolution_range,i+convolution_range]
-							#d_factor[i+convolution_range]* \
-							#factor[j + convolution_range]
-#Util.values_at(image, y+j, x+i, 0)* \
 						y_grad += image[(y+j)%image_height, (x+i)%image_width,0] * \
 							dy_factor[j+convolution_range,i+convolution_range]
-							#factor[i + convolution_range]* \
-							#d_factor[j + convolution_range]
 
-				#separate_gradient[y,x,0] = numpy.sqrt(x_grad*x_grad + y_grad*y_grad)
 				separate_gradient[y,x,Derivative.WithRespectToY] = y_grad
 				separate_gradient[y,x,Derivative.WithRespectToX] = x_grad
 
